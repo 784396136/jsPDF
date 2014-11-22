@@ -680,6 +680,30 @@ var jsPDF = (function(global) {
 			};
 			_setPage(page);
 		},
+		_copyPage = function () {
+			var thisPage = currentPage,
+				thisPageDim = pagedim[thisPage],
+				newPage;
+			beginPage( thisPageDim.width, thisPageDim.height );
+			newPage = currentPage;
+			// Do a shallow copy of the currentPage in pages array.
+			// This will overwrite the new page.
+			for ( var i = 0, len = pages[thisPage].length; i < len; i++ ) {
+				pages[newPage][i] = pages[thisPage][i];
+			}
+		},
+		_deletePage = function( n ) {
+			var p = [], pd = [];
+			for ( var i = 0, len = pages.length; i < len; i++ ) {
+				if( i !== n ) {
+					p[i] = pages[i];
+					pd[i] = pagedim[i];
+				}
+			}
+			pages = p;
+			pagedim = pd;
+			page = page === n ? pages.length : page;
+		},
 		_addPage = function() {
 			beginPage.apply(this, arguments);
 			// Set line width
@@ -956,6 +980,17 @@ var jsPDF = (function(global) {
 			_addPage.apply(this, arguments);
 			return this;
 		};
+		API.copyPage = function () {
+			_copyPage.apply( this, arguments );
+			return this;
+		};
+		API.deletePage = function() {
+			_deletePage.apply( this, arguments );
+			return this;
+		};
+		API.pageSize = function () {
+			return this.internal.pageSize;
+		};
 		API.setPage = function() {
 			_setPage.apply(this, arguments);
 			return this;
@@ -979,100 +1014,155 @@ var jsPDF = (function(global) {
 		 * @methodOf jsPDF#
 		 * @name text
 		 */
-		API.text = function(text, x, y, flags, angle) {
-			/**
-			 * Inserts something like this into PDF
-			 *   BT
-			 *    /F1 16 Tf  % Font name + size
-			 *    16 TL % How many units down for next line in multiline text
-			 *    0 g % color
-			 *    28.35 813.54 Td % position
-			 *    (line one) Tj
-			 *    T* (line two) Tj
-			 *    T* (line three) Tj
-			 *   ET
-			 */
-			function ESC(s) {
-				s = s.split("\t").join(Array(options.TabLen||9).join(" "));
-				return pdfEscape(s, flags);
-			}
+		API.text = function ( text, x, y, flags, angle, /*FORK*/ align /*~FORK*/ ) {
+			/*FORK*/
+			var maxLineLength = 0;
+			/*~FORK*/
 
+			/**
+			* Inserts something like this into PDF
+			* BT
+			* /F1 16 Tf % Font name + size
+			* 16 TL % How many units down for next line in multiline text
+			* 0 g % color
+			* 28.35 813.54 Td % position
+			* (line one) Tj
+			* T* (line two) Tj
+			* T* (line three) Tj
+			* ET
+			*/
+			function ESC( s ) {
+				s = s.split( "\t" ).join( Array( options.TabLen || 9 ).join( " " ) );
+				return pdfEscape( s, flags );
+			}
 			// Pre-August-2012 the order of arguments was function(x, y, text, flags)
 			// in effort to make all calls have similar signature like
-			//   function(data, coordinates... , miscellaneous)
+			// function(data, coordinates... , miscellaneous)
 			// this method had its args flipped.
 			// code below allows backward compatibility with old arg order.
-			if (typeof text === 'number') {
+			if ( typeof text === 'number' ) {
 				tmp = y;
 				y = x;
 				x = text;
 				text = tmp;
 			}
-
 			// If there are any newlines in text, we assume
 			// the user wanted to print multiple lines, so break the
-			// text up into an array.  If the text is already an array,
+			// text up into an array. If the text is already an array,
 			// we assume the user knows what they are doing.
-			if (typeof text === 'string' && text.match(/[\n\r]/)) {
-				text = text.split(/\r\n|\r|\n/g);
+			if ( typeof text === 'string' && text.match( /[\n\r]/ ) ) {
+				text = text.split( /\r\n|\r|\n/g );
 			}
-			if (typeof flags === 'number') {
+			/*FORK*/
+			if ( typeof angle === 'string' ) {
+				align = angle;
+				angle = null;
+			}
+			if ( typeof flags === 'string' ) {
+				align = flags;
+				flags = null;
+			}
+			/*~FORK*/
+			if ( typeof flags === 'number' ) {
 				angle = flags;
 				flags = null;
 			}
-			var xtra = '',mode = 'Td', todo;
-			if (angle) {
-				angle *= (Math.PI / 180);
-				var c = Math.cos(angle),
-				s = Math.sin(angle);
-				xtra = [f2(c), f2(s), f2(s * -1), f2(c), ''].join(" ");
+			var xtra = '', mode = 'Td', todo;
+			if ( angle ) {
+				angle *= ( Math.PI / 180 );
+				var c = Math.cos( angle ),
+				s = Math.sin( angle );
+				xtra = [f2( c ), f2( s ), f2( s * -1 ), f2( c ), ''].join( " " );
 				mode = 'Tm';
 			}
 			flags = flags || {};
-			if (!('noBOM' in flags))
+			if ( !( 'noBOM' in flags ) )
 				flags.noBOM = true;
-			if (!('autoencode' in flags))
+			if ( !( 'autoencode' in flags ) )
 				flags.autoencode = true;
+			if ( typeof text === 'string' ) {
+				text = ESC( text );
+				/*FORK*/
+				if ( align === "center" ) {
 
-			if (typeof text === 'string') {
-				text = ESC(text);
-			} else if (text instanceof Array) {
-				// we don't want to destroy  original text array, so cloning it
-				var sa = text.concat(), da = [], len = sa.length;
+					// The passed in x coordinate defines the
+					// desired center point for the text.
+					x -= this.getStringUnitWidth( text ) * activeFontSize / this.internal.scaleFactor / 2;
+				}
+				/*~FORK*/
+			} else if ( text instanceof Array ) {
+				// we don't want to destroy original text array, so clone it
+				var sa = text.concat(), da = [], len = sa.length;				
+
 				// we do array.join('text that must not be PDFescaped")
 				// thus, pdfEscape each component separately
-				while (len--) {
-					da.push(ESC(sa.shift()));
+				while ( len-- ) {
+					da.push( ESC( sa.shift() ) );
 				}
-				var linesLeft = Math.ceil((pageHeight - y) * k / (activeFontSize * lineHeightProportion));
-				if (0 <= linesLeft && linesLeft < da.length + 1) {
-					todo = da.splice(linesLeft-1);
+				var linesLeft = Math.ceil(( pageHeight - y ) * k / ( activeFontSize * lineHeightProportion ) );
+				if ( 0 <= linesLeft && linesLeft < da.length + 1 ) {
+					todo = da.splice( linesLeft - 1 );
 				}
-				text = da.join(") Tj\nT* (");
-			} else {
-				throw new Error('Type of text must be string or Array. "' + text + '" is not recognized.');
-			}
-			// Using "'" ("go next line and render text" mark) would save space but would complicate our rendering code, templates
 
+				/*FORK*/
+				if( align === "center" ) {
+					var left,
+						prevX,
+						leading =  activeFontSize * lineHeightProportion,
+						lineWidths = text.map( function( v ) { 
+							return this.getStringUnitWidth( v ) * activeFontSize / this.internal.scaleFactor;
+						}, this );
+					maxLineLength = Math.max.apply( Math, lineWidths );
+					left = x - maxLineLength / 2;
+					x -= lineWidths[0] / 2;
+					prevX = x;
+					// The first line uses the "main" Td setting,
+					// and he subsequent lines are offset by the
+					// previous line's x coordinate.
+					text = da[0] + ") Tj\n";
+					for ( var i = 1, len = da.length ; i < len; i++ ) {
+						var delta = ( maxLineLength - lineWidths[i] ) / 2;
+						text += ( ( left - prevX ) + delta ) + " -" + leading + " Td (" + da[i];
+						prevX = left + delta;
+						if( i < len - 1 ) {
+							text += ") Tj\n";
+						}
+					}
+				} else {
+					text = da.join( ") Tj\nT* (" );
+				}
+				/*~FORK*/
+				//text = da.join( ") Tj\nT* (" );( center - lineWidths[i] / 2 - left )
+			} else {
+				throw new Error( 'Type of text must be string or Array. "' + text + '" is not recognized.' );
+			}
+			/*FORK*/
+			if ( align === "right" ) {
+
+				// The passed in x coordinate defines the
+				// rightmost point of the text.
+				x -= this.getStringUnitWidth( text ) * activeFontSize / this.internal.scaleFactor;
+			}						
+			/*~FORK*/
+
+			// Using "'" ("go next line and render text" mark) would save space but would complicate our rendering code, templates
 			// BT .. ET does NOT have default settings for Tf. You must state that explicitely every time for BT .. ET
 			// if you want text transformation matrix (+ multiline) to work reliably (which reads sizes of things from font declarations)
 			// Thus, there is NO useful, *reliable* concept of "default" font for a page.
 			// The fact that "default" (reuse font used before) font worked before in basic cases is an accident
 			// - readers dealing smartly with brokenness of jsPDF's markup.
 			out(
-				'BT\n/' +
-				activeFontKey + ' ' + activeFontSize + ' Tf\n' +     // font face, style, size
-				(activeFontSize * lineHeightProportion) + ' TL\n' +  // line spacing
-				textColor +
-				'\n' + xtra + f2(x * k) + ' ' + f2((pageHeight - y) * k) + ' ' + mode + '\n(' +
-				text +
-				') Tj\nET');
-
-			if (todo) {
+			'BT\n/' +
+			activeFontKey + ' ' + activeFontSize + ' Tf\n' + // font face, style, size
+			( activeFontSize * lineHeightProportion ) + ' TL\n' + // line spacing
+			textColor +
+			'\n' + xtra + f2( x * k ) + ' ' + f2(( pageHeight - y ) * k ) + ' ' + mode + '\n(' +
+			text +
+			') Tj\nET' );
+			if ( todo ) {
 				this.addPage();
-				this.text( todo, x, activeFontSize * 1.7 / k);
+				this.text( todo, x, activeFontSize * 1.7 / k );
 			}
-
 			return this;
 		};
 
