@@ -279,7 +279,7 @@ var encodingBlock = {
 	, 'Times-Italic': encodingBlock
 //	, 'Symbol'
 //	, 'ZapfDingbats'
-}};
+}}
 /** 
 Resources:
 Font metrics data is reprocessed derivative of contents of
