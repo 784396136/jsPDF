@@ -979,7 +979,7 @@ var jsPDF = (function(global) {
 		 * @methodOf jsPDF#
 		 * @name text
 		 */
-		API.text = function(text, x, y, flags, angle) {
+		API.text = function(text, x, y, flags, angle, align) {
 			/**
 			 * Inserts something like this into PDF
 			 *   BT
@@ -1013,8 +1013,20 @@ var jsPDF = (function(global) {
 			// the user wanted to print multiple lines, so break the
 			// text up into an array.  If the text is already an array,
 			// we assume the user knows what they are doing.
-			if (typeof text === 'string' && text.match(/[\n\r]/)) {
-				text = text.split(/\r\n|\r|\n/g);
+			if (typeof text === 'string') {
+				if(text.match(/[\n\r]/)) {
+					text = text.split( /\r\n|\r|\n/g);
+				} else {
+					text = [text];
+				}			
+			}
+			if (typeof angle === 'string') {
+				align = angle;
+				angle = null;
+			}
+			if (typeof flags === 'string') {
+				align = flags;
+				flags = null;
 			}
 			if (typeof flags === 'number') {
 				angle = flags;
@@ -1034,11 +1046,9 @@ var jsPDF = (function(global) {
 			if (!('autoencode' in flags))
 				flags.autoencode = true;
 
-			if (typeof text === 'string') {
-				text = ESC(text);
-			} else if (text instanceof Array) {
+			if (text instanceof Array) {
 				// we don't want to destroy  original text array, so cloning it
-				var sa = text.concat(), da = [], len = sa.length;
+				var sa = text.concat(), da = [], i, len = sa.length;
 				// we do array.join('text that must not be PDFescaped")
 				// thus, pdfEscape each component separately
 				while (len--) {
@@ -1048,7 +1058,41 @@ var jsPDF = (function(global) {
 				if (0 <= linesLeft && linesLeft < da.length + 1) {
 					todo = da.splice(linesLeft-1);
 				}
-				text = da.join(") Tj\nT* (");
+				
+				if( align === "center" ) {
+					// The passed in x coordinate defines
+					// the center point.
+					var left,
+						prevX,
+						maxLineLength,
+						leading =  activeFontSize * lineHeightProportion,
+						lineWidths = text.map( function( v ) { 
+							return this.getStringUnitWidth( v ) * activeFontSize / k;
+						}, this );
+					maxLineLength = Math.max.apply( Math, lineWidths );
+					left = x - maxLineLength / 2;
+					// The first line uses the "main" Td setting,
+					// and he subsequent lines are offset by the
+					// previous line's x coordinate.	
+					x -= lineWidths[0] / 2;
+					prevX = x;
+					text = da[0] + ") Tj\n";
+					for ( i = 1, len = da.length ; i < len; i++ ) {
+						var delta = ( maxLineLength - lineWidths[i] ) / 2;
+						// T* = x-offset leading Td ( text )
+						text += ( ( left - prevX ) + delta ) + " -" + leading + " Td (" + da[i];
+						prevX = left + delta;
+						if( i < len - 1 ) {
+							text += ") Tj\n";
+						}
+					}
+				} else if ( align === "right" ) {
+					// The passed in x coordinate defines the
+					// rightmost point of the text.
+					x -= this.getStringUnitWidth( text ) * activeFontSize / k;
+				} else {
+					text = da.join(") Tj\nT* (");
+				}
 			} else {
 				throw new Error('Type of text must be string or Array. "' + text + '" is not recognized.');
 			}

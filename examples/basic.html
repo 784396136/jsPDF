@@ -342,6 +342,26 @@ pdf.fromHTML(
 </pre>
 <button onclick="javascript:demoFromHTML()" class="button">Run Code</button></p></div></div>
 
+
+<h2><a href="#">Text angling</a></h2>
+<div><p><pre>var pdf = new jsPDF('p', 'pt', 'letter');
+	
+	pdf.text( 'This text is at angle 0', 150, 50, 0 );
+	pdf.text( 'This text is at angle 45', 150, 300, 45 );
+	pdf.text( 'This text is at angle 90', 150, 600, 90 );
+	pdf.save('Test.pdf');</pre>
+<a href="javascript:demoTextAngles()" class="button">Run Code</a></p></div>
+
+<h2><a href="#">Text alignment</a></h2>
+<div><p><pre>var pdf = new jsPDF('p', 'pt', 'letter');
+	
+	pdf.text( 'This text is at angle 0', 50, 50, 0 );
+	pdf.text( 'This text is at angle 45', 50, 50, 45 );
+	pdf.text( 'This text is at angle 90', 50, 50, 90 );
+	pdf.save('Test.pdf');</pre>
+<a href="javascript:demoTextAlign()" class="button">Run Code</a></p></div>
+
+
 </div>
 	</div>
 
