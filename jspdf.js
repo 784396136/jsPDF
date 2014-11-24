@@ -1059,9 +1059,7 @@ var jsPDF = (function(global) {
 					todo = da.splice(linesLeft-1);
 				}
 				
-				if( align === "center" ) {
-					// The passed in x coordinate defines
-					// the center point.
+				if( align ) {					
 					var left,
 						prevX,
 						maxLineLength,
@@ -1070,26 +1068,32 @@ var jsPDF = (function(global) {
 							return this.getStringUnitWidth( v ) * activeFontSize / k;
 						}, this );
 					maxLineLength = Math.max.apply( Math, lineWidths );
-					left = x - maxLineLength / 2;
 					// The first line uses the "main" Td setting,
-					// and he subsequent lines are offset by the
-					// previous line's x coordinate.	
-					x -= lineWidths[0] / 2;
+					// and the subsequent lines are offset by the
+					// previous line's x coordinate.
+					if( align === "center" ) {
+						// The passed in x coordinate defines
+						// the center point.
+						left = x - maxLineLength / 2;							
+						x -= lineWidths[0] / 2;
+					} else if ( align === "right" ) {
+						// The passed in x coordinate defines the
+						// rightmost point of the text.
+						left = x - maxLineLength;							
+						x -= lineWidths[0];
+					}
 					prevX = x;
 					text = da[0] + ") Tj\n";
 					for ( i = 1, len = da.length ; i < len; i++ ) {
-						var delta = ( maxLineLength - lineWidths[i] ) / 2;
+						var delta = ( maxLineLength - lineWidths[i] );
+						if( align === "center" ) delta /= 2;
 						// T* = x-offset leading Td ( text )
 						text += ( ( left - prevX ) + delta ) + " -" + leading + " Td (" + da[i];
 						prevX = left + delta;
 						if( i < len - 1 ) {
 							text += ") Tj\n";
 						}
-					}
-				} else if ( align === "right" ) {
-					// The passed in x coordinate defines the
-					// rightmost point of the text.
-					x -= this.getStringUnitWidth( text ) * activeFontSize / k;
+					}			
 				} else {
 					text = da.join(") Tj\nT* (");
 				}

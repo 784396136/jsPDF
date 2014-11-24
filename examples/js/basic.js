@@ -364,8 +364,15 @@ function demoTextAngles() {
 function demoTextAlign() {
 	var pdf = new jsPDF('p', 'pt', 'letter');
 	
-	pdf.text( 'This text is\rcentered around\rthis point.', 150, 50, 'center' );
+	pdf.text( 'This text is centered\raround\rthis point.', 150, 50, 'center' );
+	pdf.text( 'This text is centered\raround\rthis point.', 150, 300, 45, 'center' );
 	pdf.text( 'This text is\raligned to the\rright.', 150, 400, 'right' );
+	pdf.text( 'This text is\raligned to the\rright.', 150, 550, 45, 'right' );
+	
+	pdf.text( 'This text is centered\raround\rthis point.', 400, 50, 'center' );
+	pdf.text( 'This text is centered\raround\rthis point.', 400, 150, -85, 'center' );
+	pdf.text( 'This text is\raligned to the\rright.', 400, 400, 'right' );
+	pdf.text( 'This text is\raligned to the\rright.', 400, 550, -85, 'right' );
 	
 	pdf.save('Test.pdf');
 }
