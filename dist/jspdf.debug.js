@@ -1013,6 +1013,8 @@ var jsPDF = (function(global) {
 			// the user wanted to print multiple lines, so break the
 			// text up into an array.  If the text is already an array,
 			// we assume the user knows what they are doing.
+			// Convert text into an array anyway to simplify
+			// later code.
 			if (typeof text === 'string') {
 				if(text.match(/[\n\r]/)) {
 					text = text.split( /\r\n|\r|\n/g);
@@ -1081,11 +1083,13 @@ var jsPDF = (function(global) {
 						// rightmost point of the text.
 						left = x - maxLineLength;							
 						x -= lineWidths[0];
+					} else {
+						throw new Error('Unrecognized alignment option, use "center" or "right".');
 					}
 					prevX = x;
 					text = da[0] + ") Tj\n";
 					for ( i = 1, len = da.length ; i < len; i++ ) {
-						var delta = ( maxLineLength - lineWidths[i] );
+						var delta = maxLineLength - lineWidths[i];
 						if( align === "center" ) delta /= 2;
 						// T* = x-offset leading Td ( text )
 						text += ( ( left - prevX ) + delta ) + " -" + leading + " Td (" + da[i];
