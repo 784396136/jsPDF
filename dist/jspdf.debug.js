@@ -706,12 +706,13 @@ var jsPDF = (function(global) {
 			for ( var i = 0, len = pages[thisPage].length; i < len; i++ ) {
 				pages[newPage][i] = pages[thisPage][i];
 			}
+			events.publish('addPage', { pageNumber : newPage });
 		},
 		_deletePage = function( n ) {
 			var p = [], pd = [];
 			pages.splice(n,1);
 			pagedim.splice(n,1);			
-			page = pages.length;
+			page--;
 		},
 		_setPage = function(n) {
 			if (n > 0 && n <= page) {
