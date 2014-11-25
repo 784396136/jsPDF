@@ -695,6 +695,30 @@ var jsPDF = (function(global) {
 			}
 			events.publish('addPage', { pageNumber : page });
 		},
+		_copyPage = function () {
+			var thisPage = currentPage,
+				thisPageDim = pagedim[thisPage],
+				newPage;
+			beginPage( thisPageDim.width, thisPageDim.height );
+			newPage = currentPage;
+			// Do a shallow copy of the currentPage in pages array.
+			// This will overwrite the new page.
+			for ( var i = 0, len = pages[thisPage].length; i < len; i++ ) {
+				pages[newPage][i] = pages[thisPage][i];
+			}
+		},
+		_deletePage = function( n ) {
+			var p = [], pd = [];
+			for ( var i = 0, len = pages.length; i < len; i++ ) {
+				if( i !== n ) {
+					p[i] = pages[i];
+					pd[i] = pagedim[i];
+				}
+			}
+			pages = p;
+			pagedim = pd;
+			page = page === n ? pages.length : page;
+		},
 		_setPage = function(n) {
 			if (n > 0 && n <= page) {
 				currentPage = n;
@@ -954,6 +978,14 @@ var jsPDF = (function(global) {
 		 */
 		API.addPage = function() {
 			_addPage.apply(this, arguments);
+			return this;
+		};
+		API.copyPage = function () {
+			_copyPage.apply( this, arguments );
+			return this;
+		};
+		API.deletePage = function() {
+			_deletePage.apply( this, arguments );
 			return this;
 		};
 		API.setPage = function() {
