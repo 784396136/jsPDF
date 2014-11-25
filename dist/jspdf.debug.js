@@ -709,15 +709,9 @@ var jsPDF = (function(global) {
 		},
 		_deletePage = function( n ) {
 			var p = [], pd = [];
-			for ( var i = 0, len = pages.length; i < len; i++ ) {
-				if( i !== n ) {
-					p[i] = pages[i];
-					pd[i] = pagedim[i];
-				}
-			}
-			pages = p;
-			pagedim = pd;
-			page = page === n ? pages.length : page;
+			pages.splice(n,1);
+			pagedim.splice(n,1);			
+			page = pages.length;
 		},
 		_setPage = function(n) {
 			if (n > 0 && n <= page) {
