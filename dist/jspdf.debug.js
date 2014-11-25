@@ -9462,7 +9462,7 @@ var FlateStream = (function() {
 		}				
 		return txtWidth;		
 	};
-	jsPDFAPI.getNumberOfPages = function (args) {
+	API.getNumberOfPages = function () {
 		'use strict';		
 		return this.internal.getNumberOfPages();
 	};
