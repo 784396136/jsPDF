@@ -9429,3 +9429,41 @@ var FlateStream = (function() {
 	}
 
 })(typeof self !== "undefined" && self || typeof window !== "undefined" && window || this);
+
+// Misc Plugins
+( function ( API ) {
+	'use strict';
+	API.getTextWidth = function ( text ) {
+		'use strict';
+		var txtWidth;
+		// Get current font size
+		var fontSize = this.internal.getFontSize();
+
+		if ( typeof text === 'string' && text.match( /[\n\r]/ ) ) {
+			text = text.split( /\r\n|\r|\n/g );
+		}
+		if ( text instanceof Array ) {
+			
+			// The passed in x coordinate defines the
+			// desired center point for the text.
+			var	lineWidths = text.map( function( v ) { 
+					return this.getStringUnitWidth( v ) * fontSize / this.internal.scaleFactor;
+				}, this );
+			txtWidth = Math.max.apply( Math, lineWidths );				
+			
+		} else {
+			// Get the actual text's width
+			/* You multiply the unit width of your string by your font size and divide
+			 * by the internal scale factor. The division is necessary
+			 * for the case where you use units other than 'pt' in the constructor
+			 * of jsPDF.
+			*/
+			txtWidth = this.getStringUnitWidth( text ) * fontSize / this.internal.scaleFactor;			
+		}				
+		return txtWidth;		
+	};
+	jsPDFAPI.getNumberOfPages = function (args) {
+		'use strict';		
+		return this.internal.getNumberOfPages();
+	};
+} )( jsPDF.API );
