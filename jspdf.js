@@ -711,6 +711,17 @@ var jsPDF = (function(global) {
 			}
 			events.publish('addPage', { pageNumber : page });
 		},
+		_copyPage = function (n) {
+			var sourcePage = n,
+				srcPageDim = pagedim[sourcePage];
+			// No need to call addPage(), the copy
+			// operation makes it redundant.
+			beginPage( srcPageDim.width, srcPageDim.height );	
+			for ( var i = 0, len = pages[sourcePage].length; i < len; i++ ) {
+				pages[currentPage][i] = pages[sourcePage][i];
+			}
+			events.publish('addPage', { pageNumber : page });
+		},
 		_deletePage = function( n ) {
 			pages.splice(n,1);
 			pagedim.splice(n,1);			
@@ -1029,6 +1040,10 @@ var jsPDF = (function(global) {
 				pagedim[beforePage] = tmpPagedim;
 				this.setPage(beforePage);
 			}
+			return this;
+		};
+		API.copyPage = function () {
+			_copyPage.apply( this, arguments );
 			return this;
 		};
 		API.deletePage = function() {
