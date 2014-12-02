@@ -711,6 +711,27 @@ var jsPDF = (function(global) {
 			}
 			events.publish('addPage', { pageNumber : page });
 		},
+		_movePage = function(targetPage, beforePage) {
+			var tmpPages, tmpPagedim;
+			if (targetPage > beforePage){
+				tmpPages = pages[targetPage];
+				tmpPagedim = pagedim[targetPage];
+				for (var i=targetPage; i>beforePage; i--){
+					pages[i] = pages[i-1];
+					pagedim[i] = pagedim[i-1];
+				}
+			}else if (targetPage < beforePage){
+				tmpPages = pages[targetPage];
+				tmpPagedim = pagedim[targetPage];
+				for (var i=targetPage; i<beforePage; i++){
+					pages[i] = pages[i+1];
+					pagedim[i] = pagedim[i+1];
+				}
+			}
+			pages[beforePage] = tmpPages;
+			pagedim[beforePage] = tmpPagedim;
+			this.setPage(beforePage);
+		},
 		_copyPage = function (n) {
 			var sourcePage = n,
 				srcPageDim = pagedim[sourcePage];
@@ -1018,28 +1039,8 @@ var jsPDF = (function(global) {
 			this.movePage(currentPage, beforePage);
 			return this;
 		};
-		API.movePage = function(targetPage, beforePage) {
-			if (targetPage > beforePage){
-				var tmpPages = pages[targetPage];
-				var tmpPagedim = pagedim[targetPage];
-				for (var i=targetPage; i>beforePage; i--){
-					pages[i] = pages[i-1];
-					pagedim[i] = pagedim[i-1];
-				}
-				pages[beforePage] = tmpPages;
-				pagedim[beforePage] = tmpPagedim;
-				this.setPage(beforePage);
-			}else if (targetPage < beforePage){
-				var tmpPages = pages[targetPage];
-				var tmpPagedim = pagedim[targetPage];
-				for (var i=targetPage; i<beforePage; i++){
-					pages[i] = pages[i+1];
-					pagedim[i] = pagedim[i+1];
-				}
-				pages[beforePage] = tmpPages;
-				pagedim[beforePage] = tmpPagedim;
-				this.setPage(beforePage);
-			}
+		API.movePage = function() {
+			_movePage.apply( this, arguments );
 			return this;
 		};
 		API.copyPage = function () {
