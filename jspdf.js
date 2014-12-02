@@ -711,6 +711,15 @@ var jsPDF = (function(global) {
 			}
 			events.publish('addPage', { pageNumber : page });
 		},
+		_deletePage = function( n ) {
+			pages.splice(n,1);
+			pagedim.splice(n,1);			
+			page--;
+			if (currentPage > page){
+				currentPage = page;
+			}
+			this.setPage(currentPage);
+		},
 		_setPage = function(n) {
 			if (n > 0 && n <= page) {
 				currentPage = n;
@@ -1022,16 +1031,8 @@ var jsPDF = (function(global) {
 			}
 			return this;
 		};
-		API.deletePage = function(targetPage) {
-			for (var i=targetPage; i< page; i++){
-				pages[i] = pages[i+1];
-				pagedim[i] = pagedim[i+1];				
-			}
-			page--;
-			if (currentPage > page){
-				currentPage = page;
-			}
-			this.setPage(currentPage);
+		API.deletePage = function() {
+			_deletePage.apply( this, arguments );
 			return this;
 		};
 		API.setDisplayMode = function(zoom, layout, pmode) {
