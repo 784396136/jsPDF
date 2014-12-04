@@ -733,7 +733,7 @@ var jsPDF = (function(global) {
 			this.setPage(beforePage);
 		},
 		_copyPage = function (n) {
-			var sourcePage = n,
+			var sourcePage = n || currentPage,
 				srcPageDim = pagedim[sourcePage];
 			// No need to call addPage(), the copy
 			// operation makes it redundant.
