@@ -18,6 +18,7 @@
  *               2014 James Makes, https://github.com/dollaruw
  *               2014 Diego Casorran, https://github.com/diegocr
  *               2014 Steven Spungin, https://github.com/Flamenco
+ *               2014 Kenneth Glassey, https://github.com/Gavvers
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -711,6 +712,13 @@ var jsPDF = (function(global) {
 			}
 			events.publish('addPage', { pageNumber : page });
 		},
+		_copyPage = function (n) {
+			var srcPage = n || currentPage,
+				srcPageDim = pagedim[srcPage];
+			beginPage(srcPageDim.width, srcPageDim.height);	
+			pages[currentPage] = pages[srcPage].slice(0);
+			events.publish('addPage', { pageNumber : page });
+		},
 		_setPage = function(n) {
 			if (n > 0 && n <= page) {
 				currentPage = n;
@@ -1032,6 +1040,10 @@ var jsPDF = (function(global) {
 				currentPage = page;
 			}
 			this.setPage(currentPage);
+			return this;
+		};
+		API.copyPage = function () {
+			_copyPage.apply( this, arguments );
 			return this;
 		};
 		API.setDisplayMode = function(zoom, layout, pmode) {
